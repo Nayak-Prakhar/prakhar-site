@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Prakhar Nayak – Dino Run</title>
+  <title>Prakhar Nayak – Red Ball Runner</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: Arial, sans-serif;
       background: #e8f6ff;
@@ -13,13 +12,13 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      min-height: 100vh;
+      height: 100vh;
       padding: 20px;
     }
     h1 {
       font-size: 28px;
-      margin-bottom: 20px;
       color: #1d3557;
+      margin-bottom: 20px;
     }
     #startBtn {
       padding: 12px 24px;
@@ -31,9 +30,6 @@
       margin-bottom: 20px;
       cursor: pointer;
     }
-    #startBtn:hover {
-      background: #444;
-    }
     canvas {
       display: none;
       background: #fff;
@@ -43,54 +39,46 @@
   </style>
 </head>
 <body>
-  <h1>Hi, I'm Prakhar Nayak — Welcome to Dino Run!</h1>
+  <h1>Hi, I'm Prakhar Nayak — Welcome to Red Ball Run!</h1>
   <button id="startBtn">🎮 Start Game</button>
   <canvas id="game" width="800" height="200"></canvas>
 
-  <!-- Sounds -->
   <audio id="jumpSound" src="https://www.fesliyanstudios.com/play-mp3/387" preload="auto"></audio>
   <audio id="gameOverSound" src="https://www.fesliyanstudios.com/play-mp3/6718" preload="auto"></audio>
 
   <script>
-    const startBtn = document.getElementById("startBtn");
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
+    const startBtn = document.getElementById("startBtn");
 
     const jumpSound = document.getElementById("jumpSound");
     const gameOverSound = document.getElementById("gameOverSound");
 
-    const dinoImg = new Image();
-    dinoImg.src = "https://opengameart.org/sites/default/files/dino_0.png"; // green dino with black outline
-    dinoImg.onload = () => { dino.ready = true; };
-
-    let dino, obstacles, frame, score, highScore, gameOver, speed;
+    let ball, obstacles, frame, score, highScore, gameOver, speed;
 
     function initGame() {
-      dino = {
+      ball = {
         x: 50,
         y: 150,
-        width: 40,
-        height: 40,
+        radius: 20,
         vy: 0,
         gravity: 1.2,
-        jumping: false,
-        ready: false
+        jumping: false
       };
       obstacles = [];
       frame = 0;
       score = 0;
-      speed = 2; // slow start
+      speed = 2;
       highScore = localStorage.getItem("highScore") || 0;
       gameOver = false;
     }
 
-    function drawDino() {
-      if (dino.ready) {
-        ctx.drawImage(dinoImg, dino.x, dino.y, dino.width, dino.height);
-      } else {
-        ctx.fillStyle = "#000";
-        ctx.fillRect(dino.x, dino.y, dino.width, dino.height);
-      }
+    function drawBall() {
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+      ctx.fillStyle = "red";
+      ctx.fill();
+      ctx.closePath();
     }
 
     function drawObstacle(obs) {
@@ -103,18 +91,19 @@
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Dino physics
-      dino.y += dino.vy;
-      if (dino.y + dino.height < canvas.height) {
-        dino.vy += dino.gravity;
+      // Ball physics
+      ball.y += ball.vy;
+      if (ball.y + ball.radius < canvas.height) {
+        ball.vy += ball.gravity;
       } else {
-        dino.y = canvas.height - dino.height;
-        dino.vy = 0;
-        dino.jumping = false;
+        ball.y = canvas.height - ball.radius;
+        ball.vy = 0;
+        ball.jumping = false;
       }
-      drawDino();
 
-      // Obstacle generation
+      drawBall();
+
+      // Obstacles
       if (frame % 100 === 0) {
         const height = 20 + Math.random() * 20;
         obstacles.push({
@@ -125,17 +114,15 @@
         });
       }
 
-      // Move and draw obstacles
       for (let i = 0; i < obstacles.length; i++) {
         obstacles[i].x -= speed;
         drawObstacle(obstacles[i]);
 
-        // Collision check
+        // Collision detection
         if (
-          dino.x < obstacles[i].x + obstacles[i].width &&
-          dino.x + dino.width > obstacles[i].x &&
-          dino.y < obstacles[i].y + obstacles[i].height &&
-          dino.y + dino.height > obstacles[i].y
+          ball.x + ball.radius > obstacles[i].x &&
+          ball.x - ball.radius < obstacles[i].x + obstacles[i].width &&
+          ball.y + ball.radius > obstacles[i].y
         ) {
           gameOver = true;
           gameOverSound.play();
@@ -146,10 +133,8 @@
         }
       }
 
-      // Remove off-screen obstacles
       obstacles = obstacles.filter(obs => obs.x + obs.width > 0);
 
-      // Score and speed
       score++;
       if (score % 100 === 0) speed += 0.5;
       if (score > highScore) {
@@ -157,7 +142,6 @@
         localStorage.setItem("highScore", highScore);
       }
 
-      // Display scores
       ctx.fillStyle = "#000";
       ctx.font = "20px Arial";
       ctx.fillText("Score: " + score, 620, 30);
@@ -168,20 +152,18 @@
     }
 
     function jump() {
-      if (!dino.jumping) {
-        dino.vy = -25;
-        dino.jumping = true;
+      if (!ball.jumping) {
+        ball.vy = -25;
+        ball.jumping = true;
         jumpSound.play();
       }
     }
 
-    // Controls
     document.addEventListener("keydown", (e) => {
       if (e.code === "Space") jump();
     });
     document.addEventListener("touchstart", () => jump());
 
-    // Start game
     startBtn.addEventListener("click", () => {
       startBtn.style.display = "none";
       canvas.style.display = "block";
