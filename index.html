@@ -3,174 +3,250 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Prakhar Nayak – Red Ball Run</title>
+  <title>Prakhar's Dino Game</title>
   <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: Arial, sans-serif;
-      background: #e8f6ff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      height: 100vh;
-      padding: 20px;
+      font-family: 'Courier New', monospace;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      min-height: 100vh; color: white;
+    }
+    .game-container {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px; padding: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.2);
     }
     h1 {
-      font-size: 28px;
-      color: #1d3557;
-      margin-bottom: 20px;
-    }
-    #startBtn {
-      padding: 12px 24px;
-      font-size: 18px;
-      background: #222;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      cursor: pointer;
+      text-align: center; margin-bottom: 20px;
+      font-size: 2.5em;
+      background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
     canvas {
-      display: none;
-      background: #fff;
-      border: 3px solid #222;
-      box-shadow: 0 0 10px #888;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 15px;
+      background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 50%, #98FB98 100%);
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+    }
+    .controls {
+      text-align: center; margin-top: 15px; font-size: 1.1em; opacity: 0.9;
+    }
+    .score-display {
+      position: absolute; top: 20px; right: 20px;
+      background: rgba(0,0,0,0.7); padding: 15px;
+      border-radius: 10px; backdrop-filter: blur(5px);
+    }
+    .start-screen {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      background: rgba(0,0,0,0.8);
+      padding: 30px; border-radius: 15px;
+      backdrop-filter: blur(10px);
+    }
+    .start-btn {
+      background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+      border: none; padding: 15px 30px;
+      font-size: 1.2em; color: white;
+      border-radius: 25px; cursor: pointer;
+      margin-top: 15px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .start-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
     }
   </style>
 </head>
 <body>
-  <h1>Hi, I'm Prakhar Nayak — Welcome to Red Ball Run!</h1>
-  <button id="startBtn">🎮 Start Game</button>
-  <canvas id="game" width="800" height="200"></canvas>
+  <div class="game-container">
+    <h1>🦕 Prakhar's Dino Game 🦕</h1>
+    <canvas id="gameCanvas" width="1000" height="300"></canvas>
+    <div class="controls">Tap / Click / Press SPACE to Jump</div>
+  </div>
 
-  <audio id="jumpSound" src="https://www.fesliyanstudios.com/play-mp3/387" preload="auto"></audio>
-  <audio id="gameOverSound" src="https://www.fesliyanstudios.com/play-mp3/6718" preload="auto"></audio>
+  <div class="score-display" id="scoreDisplay">
+    <div>Score: <span id="score">0</span></div>
+    <div>High Score: <span id="highScore">0</span></div>
+  </div>
+
+  <div class="start-screen" id="startScreen">
+    <h2>Start the Game</h2>
+    <p>Jump over cacti and birds!</p>
+    <button class="start-btn" onclick="startGame()">Start Game</button>
+  </div>
 
   <script>
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
-    const startBtn = document.getElementById("startBtn");
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-    const jumpSound = document.getElementById("jumpSound");
-    const gameOverSound = document.getElementById("gameOverSound");
+    let gameRunning = false;
+    let gameSpeed = 3;
+    let score = 0;
+    let highScore = 0;
+    let frameCount = 0;
 
-    let ball, obstacles, frame, score, highScore, gameOver, speed;
-    const FLOOR_Y = 180;
+    const groundY = 260;
+    const dino = {
+      x: 80,
+      y: groundY - 40,
+      r: 20,
+      vy: 0,
+      gravity: 0.8,
+      jumpPower: -13,
+      jumping: false
+    };
 
-    function initGame() {
-      ball = {
-        x: 50,
-        y: FLOOR_Y,
-        radius: 20,
-        vy: 0,
-        gravity: 1.2,
-        jumping: false
-      };
-      obstacles = [];
-      frame = 0;
-      score = 0;
-      speed = 2;
-      highScore = localStorage.getItem("highScore") || 0;
-      gameOver = false;
-    }
+    let obstacles = [];
 
-    function drawBall() {
+    function drawDino() {
+      // Red Ball
       ctx.beginPath();
-      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-      ctx.fillStyle = "red";
+      ctx.fillStyle = 'red';
+      ctx.arc(dino.x, dino.y, dino.r, 0, Math.PI * 2);
       ctx.fill();
-      ctx.closePath();
+
+      // Text
+      ctx.fillStyle = 'white';
+      ctx.font = "bold 14px Courier";
+      ctx.textAlign = "center";
+      ctx.fillText("Prakhar", dino.x, dino.y + 5);
     }
 
-    function drawObstacle(obs) {
-      ctx.fillStyle = "green";
-      ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-    }
+    function updateDino() {
+      if (dino.jumping) {
+        dino.y += dino.vy;
+        dino.vy += dino.gravity;
 
-    function update() {
-      if (gameOver) return;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Gravity
-      ball.y += ball.vy;
-      ball.vy += ball.gravity;
-
-      // Floor collision
-      if (ball.y >= FLOOR_Y) {
-        ball.y = FLOOR_Y;
-        ball.vy = 0;
-        ball.jumping = false;
-      }
-
-      drawBall();
-
-      // Obstacles
-      if (frame % 100 === 0) {
-        const height = 20 + Math.random() * 20;
-        obstacles.push({
-          x: canvas.width,
-          y: canvas.height - height,
-          width: 20,
-          height: height
-        });
-      }
-
-      for (let i = 0; i < obstacles.length; i++) {
-        obstacles[i].x -= speed;
-        drawObstacle(obstacles[i]);
-
-        // Collision detection
-        if (
-          ball.x + ball.radius > obstacles[i].x &&
-          ball.x - ball.radius < obstacles[i].x + obstacles[i].width &&
-          ball.y + ball.radius > obstacles[i].y
-        ) {
-          gameOver = true;
-          gameOverSound.play();
-          setTimeout(() => {
-            alert("Game Over!\\nScore: " + score + "\\nHigh Score: " + highScore);
-            document.location.reload();
-          }, 100);
+        if (dino.y >= groundY - dino.r) {
+          dino.y = groundY - dino.r;
+          dino.jumping = false;
+          dino.vy = 0;
         }
       }
-
-      obstacles = obstacles.filter(obs => obs.x + obs.width > 0);
-
-      score++;
-      if (score % 100 === 0) speed += 0.5;
-      if (score > highScore) {
-        highScore = score;
-        localStorage.setItem("highScore", highScore);
-      }
-
-      ctx.fillStyle = "#000";
-      ctx.font = "20px Arial";
-      ctx.fillText("Score: " + score, 620, 30);
-      ctx.fillText("High Score: " + highScore, 620, 60);
-
-      frame++;
-      requestAnimationFrame(update);
     }
 
     function jump() {
-      if (!ball.jumping) {
-        ball.vy = -20;
-        ball.jumping = true;
-        jumpSound.play();
+      if (!dino.jumping && gameRunning) {
+        dino.vy = dino.jumpPower;
+        dino.jumping = true;
       }
     }
 
-    document.addEventListener("keydown", (e) => {
-      if (e.code === "Space") jump();
-    });
-    document.addEventListener("touchstart", () => jump());
+    function drawGround() {
+      ctx.fillStyle = '#228B22';
+      ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+    }
 
-    startBtn.addEventListener("click", () => {
-      startBtn.style.display = "none";
-      canvas.style.display = "block";
-      initGame();
-      update();
+    function createObstacle() {
+      if (frameCount % 100 === 0) {
+        const type = Math.random() < 0.7 ? 'cactus' : 'bird';
+        const height = type === 'cactus' ? 30 + Math.random() * 20 : 20;
+        const y = type === 'cactus' ? groundY - height : groundY - 80;
+        obstacles.push({
+          x: canvas.width,
+          width: 20 + Math.random() * 10,
+          height,
+          y,
+          type
+        });
+      }
+    }
+
+    function updateObstacles() {
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obs = obstacles[i];
+        obs.x -= gameSpeed;
+
+        // Collision
+        const dx = dino.x - (obs.x + obs.width / 2);
+        const dy = dino.y - (obs.y + obs.height / 2);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < dino.r + Math.max(obs.width, obs.height) / 2) {
+          gameOver();
+          return;
+        }
+
+        if (obs.x + obs.width < 0) {
+          obstacles.splice(i, 1);
+          score += 10;
+        }
+      }
+    }
+
+    function drawObstacles() {
+      obstacles.forEach(obs => {
+        ctx.fillStyle = obs.type === 'cactus' ? '#006400' : '#8B4513';
+        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+      });
+    }
+
+    function updateScore() {
+      document.getElementById('score').textContent = score;
+      document.getElementById('highScore').textContent = highScore;
+    }
+
+    function gameOver() {
+      gameRunning = false;
+      if (score > highScore) highScore = score;
+      setTimeout(() => {
+        document.getElementById('startScreen').style.display = 'block';
+      }, 1000);
+    }
+
+    function resetGame() {
+      dino.y = groundY - dino.r;
+      dino.vy = 0;
+      dino.jumping = false;
+      obstacles = [];
+      score = 0;
+      gameSpeed = 3;
+      frameCount = 0;
+    }
+
+    function gameLoop() {
+      if (!gameRunning) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawGround();
+      updateDino();
+      createObstacle();
+      updateObstacles();
+      drawObstacles();
+      drawDino();
+      updateScore();
+
+      if (frameCount % 300 === 0) gameSpeed += 0.3;
+      frameCount++;
+      requestAnimationFrame(gameLoop);
+    }
+
+    function startGame() {
+      document.getElementById('startScreen').style.display = 'none';
+      resetGame();
+      gameRunning = true;
+      gameLoop();
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        jump();
+      }
+    });
+
+    canvas.addEventListener('click', jump);
+    canvas.addEventListener('touchstart', e => {
+      e.preventDefault();
+      jump();
     });
   </script>
 </body>
