@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Prakhar Nayak – Red Ball Runner</title>
+  <title>Prakhar Nayak – Red Ball Run</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -55,11 +55,12 @@
     const gameOverSound = document.getElementById("gameOverSound");
 
     let ball, obstacles, frame, score, highScore, gameOver, speed;
+    const FLOOR_Y = 180;
 
     function initGame() {
       ball = {
         x: 50,
-        y: 150,
+        y: FLOOR_Y,
         radius: 20,
         vy: 0,
         gravity: 1.2,
@@ -91,12 +92,13 @@
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Ball physics
+      // Gravity
       ball.y += ball.vy;
-      if (ball.y + ball.radius < canvas.height) {
-        ball.vy += ball.gravity;
-      } else {
-        ball.y = canvas.height - ball.radius;
+      ball.vy += ball.gravity;
+
+      // Floor collision
+      if (ball.y >= FLOOR_Y) {
+        ball.y = FLOOR_Y;
         ball.vy = 0;
         ball.jumping = false;
       }
@@ -153,7 +155,7 @@
 
     function jump() {
       if (!ball.jumping) {
-        ball.vy = -25;
+        ball.vy = -20;
         ball.jumping = true;
         jumpSound.play();
       }
