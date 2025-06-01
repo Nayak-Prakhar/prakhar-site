@@ -60,7 +60,7 @@
     const gameOverSound = document.getElementById("gameOverSound");
 
     const dinoImg = new Image();
-    dinoImg.src = "https://i.imgur.com/4AiXzf8.png"; // Dino image
+    dinoImg.src = "https://opengameart.org/sites/default/files/dino_0.png"; // green dino with black outline
     dinoImg.onload = () => { dino.ready = true; };
 
     let dino, obstacles, frame, score, highScore, gameOver, speed;
@@ -79,7 +79,7 @@
       obstacles = [];
       frame = 0;
       score = 0;
-      speed = 2;
+      speed = 2; // slow start
       highScore = localStorage.getItem("highScore") || 0;
       gameOver = false;
     }
@@ -103,7 +103,7 @@
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Update dino
+      // Dino physics
       dino.y += dino.vy;
       if (dino.y + dino.height < canvas.height) {
         dino.vy += dino.gravity;
@@ -114,7 +114,7 @@
       }
       drawDino();
 
-      // Spawn obstacles
+      // Obstacle generation
       if (frame % 100 === 0) {
         const height = 20 + Math.random() * 20;
         obstacles.push({
@@ -125,7 +125,7 @@
         });
       }
 
-      // Draw obstacles
+      // Move and draw obstacles
       for (let i = 0; i < obstacles.length; i++) {
         obstacles[i].x -= speed;
         drawObstacle(obstacles[i]);
@@ -146,6 +146,7 @@
         }
       }
 
+      // Remove off-screen obstacles
       obstacles = obstacles.filter(obs => obs.x + obs.width > 0);
 
       // Score and speed
@@ -156,7 +157,7 @@
         localStorage.setItem("highScore", highScore);
       }
 
-      // Draw score
+      // Display scores
       ctx.fillStyle = "#000";
       ctx.font = "20px Arial";
       ctx.fillText("Score: " + score, 620, 30);
@@ -174,12 +175,13 @@
       }
     }
 
+    // Controls
     document.addEventListener("keydown", (e) => {
       if (e.code === "Space") jump();
     });
-
     document.addEventListener("touchstart", () => jump());
 
+    // Start game
     startBtn.addEventListener("click", () => {
       startBtn.style.display = "none";
       canvas.style.display = "block";
