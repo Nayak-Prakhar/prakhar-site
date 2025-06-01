@@ -61,20 +61,27 @@
 
     const dinoImg = new Image();
     dinoImg.src = "https://i.imgur.com/4AiXzf8.png";
+    dinoImg.onload = () => { dino.ready = true; };
 
-    let dino, obstacles, frame, score, highScore, gameOver;
+    let dino, obstacles, frame, score, highScore, gameOver, speed;
 
     function initGame() {
-      dino = { x: 50, y: 150, width: 40, height: 40, vy: 0, gravity: 1.5, jumping: false };
+      dino = { x: 50, y: 150, width: 40, height: 40, vy: 0, gravity: 1.5, jumping: false, ready: false };
       obstacles = [];
       frame = 0;
       score = 0;
+      speed = 5;
       highScore = localStorage.getItem("highScore") || 0;
       gameOver = false;
     }
 
     function drawDino() {
-      ctx.drawImage(dinoImg, dino.x, dino.y, dino.width, dino.height);
+      if (dino.ready) {
+        ctx.drawImage(dinoImg, dino.x, dino.y, dino.width, dino.height);
+      } else {
+        ctx.fillStyle = "#000";
+        ctx.fillRect(dino.x, dino.y, dino.width, dino.height);
+      }
     }
 
     function drawObstacle(obs) {
@@ -87,7 +94,6 @@
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Dino physics
       dino.y += dino.vy;
       if (dino.y + dino.height < canvas.height) {
         dino.vy += dino.gravity;
@@ -98,17 +104,15 @@
       }
       drawDino();
 
-      // Obstacles
       if (frame % 100 === 0) {
         const height = 30 + Math.random() * 40;
         obstacles.push({ x: canvas.width, y: canvas.height - height, width: 20, height: height });
       }
 
       for (let i = 0; i < obstacles.length; i++) {
-        obstacles[i].x -= 5;
+        obstacles[i].x -= speed;
         drawObstacle(obstacles[i]);
 
-        // Collision
         if (
           dino.x < obstacles[i].x + obstacles[i].width &&
           dino.x + dino.width > obstacles[i].x &&
@@ -124,11 +128,10 @@
         }
       }
 
-      // Clean obstacles
       obstacles = obstacles.filter(obs => obs.x + obs.width > 0);
 
-      // Score
       score++;
+      if (score % 100 === 0) speed += 0.5;
       if (score > highScore) {
         highScore = score;
         localStorage.setItem("highScore", highScore);
@@ -154,7 +157,6 @@
     document.addEventListener("keydown", (e) => {
       if (e.code === "Space") jump();
     });
-
     document.addEventListener("touchstart", () => jump());
 
     startBtn.addEventListener("click", () => {
